@@ -46,16 +46,29 @@ def TCP_connection(fileAddress):
     domain = split2[0]
     file = split3[0]
     ext = split3[1]
+    print(domain)
+    print(file)
+    print(ext)
     s = socket(AF_INET, SOCK_STREAM)
-    s.connect((domain, 80))
-    output = 'GET /%s.%s HTTP/1.0\r\n\r\n' % (file,ext)
+    s.connect(('%s'%(domain), 80))#'%s'%(domain)
+
+    head = "HEAD /%s/%s HTTP/1.1\r\nHOST: %s\r\n\r\n" % (file, ext, domain)
+    s.sendall(head.encode())
+    reply_head = b''
+    data = s.recv(1024)
+    reply_head += data
+
+    print("HEAD:", reply_head)
+
+    output = "GET /%s/%s HTTP/1.1\r\nHOST: %s\r\n\r\n" % (file, ext, domain)
     s.sendall(output.encode())
     reply = b''
 
-    while True:
-        data = s.recv(2048)
+    while select([s], [], [], 3)[0]:
+        data = s.recv(1024)
         if not data: break
         reply += data
+        print(len(reply))
 
     headers = reply.split(b'\r\n\r\n')[0]
     image = reply[len(headers) + 4:]
