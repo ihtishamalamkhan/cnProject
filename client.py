@@ -1,6 +1,7 @@
 from socket import *
 from sys import *
-from select import*
+from time import *
+from threading import*
 
 resumeFlag = False
 numberOfConnections = None
@@ -44,6 +45,8 @@ def parseArguments(argv):
 def TCP_connection(fileAddress):
     resume = False
     cl = 0
+    timeMain = 0
+    time_interval = 0
     headDic = {}
     serverPort = 80
     # split file, extension and domain
@@ -52,9 +55,6 @@ def TCP_connection(fileAddress):
     domain = split1[1].split('/', 1)[0]
     addr = split1[1].split('/', 1)[1]
     fileExt = split1[1].rsplit('/', 1)[1]
-    print(domain)
-    print(addr)
-    print(fileExt)
     # connect to html or local server
     s = socket(AF_INET, SOCK_STREAM)
     s.connect((domain, serverPort))  # '%s'%(domain) #'10.7.44.132'
@@ -82,16 +82,17 @@ def TCP_connection(fileAddress):
     f.close()
     f = open('%s' % (fileExt), 'ab')
     f.write(splitData)
-    # select([s], [], [], 3)[0]
     # receive data in loop and write it in file
     downloaded = len(splitData)
+    start = time()
     while data:
         data = s.recv(1024)
         f.write(data)
+        time_spend = (time())-start
         downloaded += len(data)
-        percentage = int((downloaded/float(cl))*100)
-        print('%d %%'%percentage, end='\r')
-    print('%d %% downloaded'%percentage)
+        speed = int((downloaded/1024)/time_spend)
+        percentage = int((downloaded / float(cl)) * 100)
+        print('%d %% downloaded;    Speed: %d kb/s ' % (percentage,   speed), end='\r')
     s.close()
 
 
