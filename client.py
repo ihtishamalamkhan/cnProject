@@ -39,48 +39,38 @@ def parseArguments(argv):
 def TCP_connection(fileAddress):
     serverPort = 80
     string = fileAddress
+    #split file, extension and domain
     split1 = string.split('//')
     string1 = split1[1]
     split2 = string1.split('/')
-    split3 = split2[1].split('.')
+    split3 = split2[-1].split('.')
     domain = split2[0]
     file = split3[0]
     ext = split3[1]
-    print(domain)
-    print(file)
-    print(ext)
+    #connect to html or local server
     s = socket(AF_INET, SOCK_STREAM)
-    s.connect(('%s'%(domain), 80))#'%s'%(domain)
-
-    head = "HEAD /%s/%s HTTP/1.1\r\nHOST: %s\r\n\r\n" % (file, ext, domain)
-    s.sendall(head.encode())
-    reply_head = b''
-    data = s.recv(1024)
-    reply_head += data
-
-    print("HEAD:", reply_head)
-
-    output = "GET /%s/%s HTTP/1.1\r\nHOST: %s\r\n\r\n" % (file, ext, domain)
+    s.connect(('10.7.44.121', serverPort)) #'%s'%(domain) #'10.7.44.121'
+    #GET query
+    output = "GET /%s.%s HTTP/1.1\r\nHOST: %s\r\n\r\n" % (file, ext, domain)
     s.sendall(output.encode())
-    reply = b''
-
-    while select([s], [], [], 3)[0]:
+    #retrieve header and split header
+    reply = s.recv(1024)
+    splitData = reply.split(b'\r\n\r\n')[1]
+    # save image and append image in bytes
+    f = open('%s.%s' % (file, ext), 'wb')
+    f.close()
+    f = open('%s.%s' % (file, ext), 'ab')
+    f.write(splitData)
+    #select([s], [], [], 3)[0]
+    #receive data in loop and write it in file
+    while 1:
         data = s.recv(1024)
         if not data: break
-        reply += data
-        print(len(reply))
-
-    headers = reply.split(b'\r\n\r\n')[0]
-    image = reply[len(headers) + 4:]
-
-    # save image
-    f = open('%s.%s' % (file, ext), 'wb')
-    f.write(image)
-    f.close()
-
+        f.write(data)
     s.close()
 
 
 if __name__ == '__main__':
     parseArguments(argv)
     TCP_connection(fileAddress)
+
