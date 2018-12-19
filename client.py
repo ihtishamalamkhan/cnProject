@@ -1,7 +1,6 @@
 from socket import *
 from sys import *
 from time import *
-from threading import*
 
 resumeFlag = False
 numberOfConnections = None
@@ -45,8 +44,6 @@ def parseArguments(argv):
 def TCP_connection(fileAddress):
     resume = False
     cl = 0
-    timeMain = 0
-    time_interval = 0
     headDic = {}
     serverPort = 80
     # split file, extension and domain
