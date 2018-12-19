@@ -1,5 +1,6 @@
 from socket import *
 from sys import *
+from select import*
 
 resumeFlag = False
 numberOfConnections = None
@@ -8,6 +9,9 @@ connectionType = None
 fileAddress = None
 outputLocation = None
 
+#URL downloads for demo
+#http://techslides.com/demos/sample-videos/small.mp4
+#https://www.gstatic.com/webp/gallery/1.jpg
 
 def parseArguments(argv):
     for i in range(len(argv)):
@@ -42,25 +46,25 @@ def TCP_connection(fileAddress):
     cl = 0
     headDic = {}
     serverPort = 80
-    string = fileAddress
     # split file, extension and domain
     string = fileAddress
     split1 = string.split('//')
-    string1 = split1[1]
-    split2 = string1.split('/')
-    split3 = split2[-1].split('.')
-    domain = split2[0]
-    file = split3[0]
-    ext = split3[1]
+    domain = split1[1].split('/', 1)[0]
+    addr = split1[1].split('/', 1)[1]
+    fileExt = split1[1].rsplit('/', 1)[1]
+    print(domain)
+    print(addr)
+    print(fileExt)
     # connect to html or local server
     s = socket(AF_INET, SOCK_STREAM)
-    s.connect(('%s'%(domain), serverPort))  # '%s'%(domain) #'10.7.44.121'
+    s.connect((domain, serverPort))  # '%s'%(domain) #'10.7.44.132'
     # GET query
-    output = "GET /%s.%s HTTP/1.1\r\nHOST: %s\r\n\r\n" % (file, ext, domain)
+    output = "GET /%s HTTP/1.1\r\nHOST: %s\r\nConnection: close\r\n\r\n" % (addr, domain)
     s.sendall(output.encode())
     # retrieve header and split header
-    reply = s.recv(1024)
+    data = reply = s.recv(1024)
     header = reply.split(b'\r\n\r\n')[0]
+    print(header)
     # decode header to str
     dHeader = header.decode('utf-8')
     # header
@@ -69,24 +73,25 @@ def TCP_connection(fileAddress):
     for line in splitHeader:
         if "Accept-Ranges:" in line:
             resume = True
-            print(resume)
         if "Content-Length:" in line:
             cl = line.split(':')[1]
-            print("Content-Length:", cl)
             break
     splitData = reply.split(b'\r\n\r\n')[1]
     # save image and append image in bytes
-    f = open('%s.%s' % (file, ext), 'wb')
+    f = open('%s' % (fileExt), 'wb')
     f.close()
-    f = open('%s.%s' % (file, ext), 'ab')
+    f = open('%s' % (fileExt), 'ab')
     f.write(splitData)
     # select([s], [], [], 3)[0]
     # receive data in loop and write it in file
-    while 1:
+    downloaded = len(splitData)
+    while data:
         data = s.recv(1024)
-        if not data:
-            break
         f.write(data)
+        downloaded += len(data)
+        percentage = int((downloaded/float(cl))*100)
+        print('%d %%'%percentage, end='\r')
+    print('%d %% downloaded'%percentage)
     s.close()
 
 
