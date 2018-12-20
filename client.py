@@ -1,6 +1,7 @@
 from socket import *
 from sys import *
 from time import *
+from threading import*
 
 resumeFlag = False
 numberOfConnections = None
@@ -8,6 +9,8 @@ intervalMetricReport = None
 connectionType = None
 fileAddress = None
 outputLocation = None
+
+interval_flag = None
 
 #URL downloads for demo
 #http://techslides.com/demos/sample-videos/small.mp4
@@ -42,8 +45,12 @@ def parseArguments(argv):
 
 
 def TCP_connection(fileAddress):
+    global interval_flag
+    interval_flag = True
     resume = False
     cl = 0
+    timeMain = 0
+    time_interval = 0
     headDic = {}
     serverPort = 80
     # split file, extension and domain
@@ -82,15 +89,30 @@ def TCP_connection(fileAddress):
     # receive data in loop and write it in file
     downloaded = len(splitData)
     start = time()
+    thisisfinal()
     while data:
         data = s.recv(1024)
         f.write(data)
         time_spend = (time())-start
         downloaded += len(data)
-        speed = int((downloaded/1024)/time_spend)
-        percentage = int((downloaded / float(cl)) * 100)
-        print('%d %% downloaded;    Speed: %d kb/s ' % (percentage,   speed), end='\r')
+        if interval_flag == True:
+            speed = int((downloaded / 1024) / time_spend)
+            percentage = int((downloaded / float(cl)) * 100)
+            print('%d %% downloaded;    Speed: %d kb/s ' % (percentage, speed), end='\r')
+            interval_flag = False
+        #print(interval_flag)
+        #interval_flag = False
+
     s.close()
+
+def thisisfinal():
+    global interval_flag
+    t = Timer(intervalMetricReport, thisisfinal)
+    t.daemon = True
+    t.start()
+    interval_flag = True
+
+    #sleep(intervalMetricReport)
 
 
 if __name__ == '__main__':
